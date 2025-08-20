@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movimentação do Congresso Nacional - Área Técnica</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-landmark"></i>
+                    <h1>Movimentação do Congresso Nacional</h1>
+                </div>
+                <div class="header-info">
+                    <div class="last-update">
+                        <i class="fas fa-clock"></i>
+                        <span id="lastUpdate">Última atualização: --</span>
+                    </div>
+                    <div class="refresh-btn">
+                        <button id="refreshBtn" onclick="refreshData()">
+                            <i class="fas fa-sync-alt"></i>
+                            Atualizar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <div class="container">
+            <!-- Area Selection -->
+            <section class="area-selection">
+                <h2>Selecione a Área Técnica</h2>
+                
+                <!-- Filtro de Período -->
+                <div class="period-filter">
+                    <div class="filter-group">
+                        <label for="startDate">Data Início:</label>
+                        <input type="date" id="startDate" onchange="updateEventCounts()">
+                    </div>
+                    <div class="filter-group">
+                        <label for="endDate">Data Fim:</label>
+                        <input type="date" id="endDate" onchange="updateEventCounts()">
+                    </div>
+                    <div class="filter-group">
+                        <button onclick="applyDateFilter()" class="apply-filter-btn">
+                            <i class="fas fa-filter"></i>
+                            Aplicar Filtro
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="area-grid" id="areaGrid">
+                    <!-- Areas will be loaded here -->
+                </div>
+            </section>
+
+            <!-- Dashboard Content -->
+            <section class="dashboard-content" id="dashboardContent" style="display: none;">
+                <!-- Area Header -->
+                <div class="area-header">
+                    <button class="back-btn" onclick="showAreaSelection()">
+                        <i class="fas fa-arrow-left"></i>
+                        Voltar
+                    </button>
+                    <h2 id="currentAreaTitle">Área Técnica</h2>
+                    <div class="area-stats">
+                        <div class="stat-item">
+                            <span class="stat-number" id="totalEvents">0</span>
+                            <span class="stat-label">Total de Eventos</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number" id="ongoingEvents">0</span>
+                            <span class="stat-label">Em Andamento</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number" id="completedEvents">0</span>
+                            <span class="stat-label">Encerrados</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Statistics Section -->
+                <section class="statistics-section">
+                    <h3>Estatísticas de Proposições</h3>
+                    <div class="stats-table-container">
+                        <table class="stats-table">
+                            <thead>
+                                <tr>
+                                    <th>Posicionamento CNM</th>
+                                    <th>Aprovação na Câmara</th>
+                                    <th>Aprovação no Senado</th>
+                                    <th>Sancionado pela Presidência</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="position-cell">
+                                        <div class="position-item">
+                                            <span class="position-label">Favorável:</span>
+                                            <span class="position-value" id="cnmFavoravel">0</span>
+                                        </div>
+                                        <div class="position-item">
+                                            <span class="position-label">Desfavorável:</span>
+                                            <span class="position-value" id="cnmDesfavoravel">0</span>
+                                        </div>
+                                        <div class="position-item">
+                                            <span class="position-label">Neutro:</span>
+                                            <span class="position-value" id="cnmNeutro">0</span>
+                                        </div>
+                                    </td>
+                                    <td class="approval-cell">
+                                        <div class="approval-item">
+                                            <span class="approval-label">CNM Favorável:</span>
+                                            <span class="approval-value" id="camaraCnmFavoravel">0</span>
+                                        </div>
+                                        <div class="approval-item">
+                                            <span class="approval-label">CNM Desfavorável:</span>
+                                            <span class="approval-value" id="camaraCnmDesfavoravel">0</span>
+                                        </div>
+                                        <div class="approval-item">
+                                            <span class="approval-label">CNM Neutro:</span>
+                                            <span class="approval-value" id="camaraCnmNeutro">0</span>
+                                        </div>
+                                    </td>
+                                    <td class="approval-cell">
+                                        <div class="approval-item">
+                                            <span class="approval-label">CNM Favorável:</span>
+                                            <span class="approval-value" id="senadoCnmFavoravel">0</span>
+                                        </div>
+                                        <div class="approval-item">
+                                            <span class="approval-label">CNM Desfavorável:</span>
+                                            <span class="approval-value" id="senadoCnmDesfavoravel">0</span>
+                                        </div>
+                                        <div class="approval-item">
+                                            <span class="approval-label">CNM Neutro:</span>
+                                            <span class="approval-value" id="senadoCnmNeutro">0</span>
+                                        </div>
+                                    </td>
+                                    <td class="approval-cell">
+                                        <div class="approval-item">
+                                            <span class="approval-label">CNM Favorável:</span>
+                                            <span class="approval-value" id="presidenciaCnmFavoravel">0</span>
+                                        </div>
+                                        <div class="approval-item">
+                                            <span class="approval-label">CNM Desfavorável:</span>
+                                            <span class="approval-value" id="presidenciaCnmDesfavoravel">0</span>
+                                        </div>
+                                        <div class="approval-item">
+                                            <span class="approval-label">CNM Neutro:</span>
+                                            <span class="approval-value" id="presidenciaCnmNeutro">0</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Proposições Table Section -->
+                <section class="proposicoes-section">
+                    <div class="section-header">
+                        <h3>Tabela de Proposições</h3>
+                        <button class="add-proposicao-btn" onclick="showAddProposicaoModal()">
+                            <i class="fas fa-plus"></i>
+                            Adicionar Proposição
+                        </button>
+                    </div>
+                    <div class="table-container">
+                        <table class="proposicoes-table" id="proposicoesTable">
+                            <thead>
+                                <tr>
+                                    <th>Número do Projeto</th>
+                                    <th>Ementa</th>
+                                    <th>Casa Iniciadora</th>
+                                    <th>Forma de Apreciação</th>
+                                    <th>Eixo Temático</th>
+                                    <th>Situação</th>
+                                    <th>Cabe Análise?</th>
+                                    <th>Prazo</th>
+                                    <th>Análise Realizada?</th>
+                                    <th>Documento</th>
+                                    <th>Posicionamento CNM</th>
+                                    <th>Prioridade</th>
+                                    <th>Observação</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="proposicoesTableBody">
+                                <!-- Proposições serão carregadas aqui -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Events Section -->
+                <section class="events-section">
+                    <div class="section-header">
+                        <h3>Eventos da Semana</h3>
+                        <div class="filters">
+                            <select id="statusFilter" onchange="filterEvents()">
+                                <option value="">Todos os Status</option>
+                                <option value="Em Andamento">Em Andamento</option>
+                                <option value="Encerrada">Encerrada</option>
+                                <option value="Cancelada">Cancelada</option>
+                            </select>
+                            <select id="typeFilter" onchange="filterEvents()">
+                                <option value="">Todos os Tipos</option>
+                                <option value="Audiência Pública">Audiência Pública</option>
+                                <option value="Sessão">Sessão</option>
+                                <option value="Reunião">Reunião</option>
+                                <option value="Palestra">Palestra</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="events-grid" id="eventsGrid">
+                        <!-- Events will be loaded here -->
+                    </div>
+                </section>
+            </section>
+
+            <!-- Uncategorized Events Section -->
+            <section class="uncategorized-section" id="uncategorizedSection" style="display: none;">
+                <div class="section-header">
+                    <h3>Eventos Não Categorizados</h3>
+                    <button class="back-btn" onclick="showAreaSelection()">
+                        <i class="fas fa-arrow-left"></i>
+                        Voltar
+                    </button>
+                </div>
+                <div class="events-grid" id="uncategorizedEventsGrid">
+                    <!-- Uncategorized events will be loaded here -->
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Notification Modal -->
+    <div class="notification-modal" id="notificationModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Novo Evento</h3>
+                <button class="close-btn" onclick="closeNotification()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="notificationContent">
+                <!-- Notification content will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Proposição Modal -->
+    <div class="modal" id="addProposicaoModal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h3>Adicionar Proposição</h3>
+                <button class="close-btn" onclick="closeAddProposicaoModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="proposicaoForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="numeroProjeto">Número do Projeto de Lei:</label>
+                            <input type="text" id="numeroProjeto" name="numeroProjeto" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="casaIniciadora">Casa Iniciadora:</label>
+                            <select id="casaIniciadora" name="casaIniciadora" required>
+                                <option value="">Selecione...</option>
+                                <option value="Câmara">Câmara dos Deputados</option>
+                                <option value="Senado">Senado Federal</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="ementa">Ementa:</label>
+                        <textarea id="ementa" name="ementa" rows="3" required></textarea>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="formaApreciacao">Forma de Apreciação:</label>
+                            <input type="text" id="formaApreciacao" name="formaApreciacao" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="situacao">Situação:</label>
+                            <input type="text" id="situacao" name="situacao" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="cabeAnalise">Cabe Análise?</label>
+                            <select id="cabeAnalise" name="cabeAnalise" required>
+                                <option value="">Selecione...</option>
+                                <option value="SIM">SIM</option>
+                                <option value="NÃO">NÃO</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="prazoAnalise">Prazo para Análise:</label>
+                            <input type="date" id="prazoAnalise" name="prazoAnalise">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="analiseRealizada">Análise Realizada?</label>
+                            <select id="analiseRealizada" name="analiseRealizada" required>
+                                <option value="">Selecione...</option>
+                                <option value="SIM">SIM</option>
+                                <option value="NÃO">NÃO</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="documentoAnalise">Documento da Análise:</label>
+                            <input type="file" id="documentoAnalise" name="documentoAnalise" accept=".pdf,.doc,.docx">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="posicionamentoCnm">Posicionamento da CNM:</label>
+                            <select id="posicionamentoCnm" name="posicionamentoCnm" required>
+                                <option value="">Selecione...</option>
+                                <option value="FAVORÁVEL">FAVORÁVEL</option>
+                                <option value="DESFAVORÁVEL">DESFAVORÁVEL</option>
+                                <option value="NEUTRO">NEUTRO</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="prioridade">Prioridade:</label>
+                            <select id="prioridade" name="prioridade" required>
+                                <option value="">Selecione...</option>
+                                <option value="ALTA">ALTA</option>
+                                <option value="MÉDIA">MÉDIA</option>
+                                <option value="BAIXA">BAIXA</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="observacao">Observação:</label>
+                        <textarea id="observacao" name="observacao" rows="3" maxlength="1500" placeholder="Máximo 1500 caracteres"></textarea>
+                        <span class="char-count" id="charCount">0/1500</span>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" onclick="closeAddProposicaoModal()" class="btn-secondary">Cancelar</button>
+                        <button type="submit" class="btn-primary">Salvar Proposição</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <span>Carregando...</span>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
