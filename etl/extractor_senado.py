@@ -467,3 +467,187 @@ class SenadoExtractor:
             return "Palestra"
         else:
             return tipo_raw
+
+class ExtractorSenado:
+    BASE_URL = 'https://www25.senado.leg.br/web/atividade'
+
+    def __init__(self):
+        self.session = requests.Session()
+        self.session.headers.update({
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+        })
+
+    def get_agenda_legislativa(self, dias: int = 7) -> List[Dict]:
+        """Captura eventos legislativos da Agenda do Senado para os próximos dias."""
+        try:
+            resp = self.session.get(self.BASE_URL, timeout=20)
+            resp.raise_for_status()
+            soup = BeautifulSoup(resp.text, 'lxml')
+
+            eventos = []
+            blocos = soup.select('div.portlet-content, div.agenda, section, div[class*="agenda"]')
+            for bloco in blocos:
+                textos = ' '.join(bloco.get_text('\n', strip=True).split())
+                
+                # FILTRO RESTRITIVO: APENAS Sessões e Reuniões
+                if not re.search(r'(Sess[ãa]o|Reuni[ãa]o)', textos, re.I):
+                    continue
+                
+                # EXCLUIR TODOS os outros tipos de eventos
+                if re.search(r'(Solene|Solenidade|Homenagem|Lançamento|Audiência|Conferência|Seminário|Cúpula|Palestra|Exposição|Visita|Debate|Workshop|Curso|Simpósio)', textos, re.I):
+                    continue
+
+                titulo = self._extrair_titulo(bloco)
+                if not titulo:
+                    continue
+
+                # REFORÇAR filtro por título - APENAS Sessões e Reuniões
+                lowt = titulo.lower()
+                if not any(k in lowt for k in ['sessão', 'sessao', 'reunião', 'reuniao']):
+                    continue
+                
+                # EXCLUIR todos os outros tipos
+                if any(k in lowt for k in ['solene', 'solenidade', 'homenagem', 'audiência', 'audiencia', 'conferência', 'conferencia', 'seminário', 'seminario', 'cúpula', 'cupula', 'palestra', 'exposição', 'exposicao', 'visita', 'debate', 'workshop', 'curso', 'simpósio', 'simposio']):
+                    continue
+
+                comissao = self._extrair_comissao(bloco, titulo)
+                finalidade = self._extrair_finalidade(bloco)
+                status = self._extrair_status(bloco)
+                horario = self._extrair_horario(bloco)
+                local = self._extrair_local(bloco)
+                link = self._extrair_link(bloco, titulo)
+                tipo = self._inferir_tipo(titulo)
+                tema = self._inferir_tema(titulo, bloco.get_text(' ', strip=True))
+
+                data_inicio, data_fim = self._formatar_datas(horario)
+
+                eventos.append({
+                    'evento_id_externo': link or f'senado::{hash(titulo)}',
+                    'nome': self._formatar_nome_com_comissao(titulo, comissao),
+                    'data_inicio': data_inicio,
+                    'data_fim': data_fim,
+                    'situacao': status,
+                    'tema': tema,
+                    'tipo_evento': tipo,
+                    'local_evento': local,
+                    'link_evento': link,
+                    'area_tecnica': None,
+                    'fonte': 'Senado',
+                    'comissao': comissao,
+                    'finalidade': finalidade
+                })
+
+            return eventos
+        except Exception as e:
+            print(f"Erro ao obter agenda legislativa do Senado: {e}")
+            return []
+
+    def _extrair_titulo(self, bloco) -> str:
+        # Preferir elementos com destaque de título
+        for sel in ['h3', 'h4', 'a', '.titulo', '.title']:
+            el = bloco.select_one(sel)
+            if el and el.get_text(strip=True):
+                return el.get_text(strip=True)
+        # fallback por heurística
+        txt = bloco.get_text(' ', strip=True)
+        m = re.search(r'(Sessão|Reunião|Extraordinária|Ordinária|Audiência)[^\n]{0,120}', txt, re.I)
+        return m.group(0).strip() if m else None
+
+    def _extrair_comissao(self, bloco, titulo: str) -> str:
+        txt = bloco.get_text(' ', strip=True)
+        # Ex.: Comissão de Meio Ambiente, Comissão de Assuntos Sociais, etc.
+        m = re.search(r'Comiss[aã]o[^\n]{0,80}', txt, re.I)
+        if m:
+            return m.group(0).strip()
+        # tentar siglas (CMA, CAS, CAE, etc.)
+        m2 = re.search(r'\b(CAE|CAS|CMA|CSP|CRA|CDH|CDR|CTFC|CI|CE|CCJ)\b[^\n]{0,80}', txt)
+        if m2:
+            return m2.group(0).strip()
+        # heurística do título
+        if 'Comiss' in titulo:
+            return titulo
+        return None
+
+    def _extrair_finalidade(self, bloco) -> str:
+        txt = bloco.get_text('\n', strip=True)
+        # Buscar frases de finalidade (Discussão, Votação, Deliberação, Emendas)
+        m = re.search(r'(Discuss[aã]o.*|Vota[cç][aã]o.*|Deliberativa.*|Emendas.*?\.)', txt, re.I)
+        if m:
+            return m.group(0).strip()
+        # Se houver itens "Pauta", tentar coletar próximo texto
+        pauta = bloco.find(string=re.compile('Pauta', re.I))
+        if pauta:
+            # pegar vizinhos
+            cont = pauta.parent.get_text(' ', strip=True)
+            if cont:
+                return cont
+        return None
+
+    def _extrair_status(self, bloco) -> str:
+        txt = bloco.get_text(' ', strip=True)
+        # Mapear palavras do site para nossos status
+        if re.search(r'Agendada', txt, re.I):
+            return 'Agendada'
+        if re.search(r'Em andamento|Realiza', txt, re.I):
+            return 'Em Andamento'
+        if re.search(r'Encerrad', txt, re.I):
+            return 'Encerrada'
+        if re.search(r'Cancelad', txt, re.I):
+            return 'Cancelada'
+        return 'Agendada'
+
+    def _extrair_horario(self, bloco) -> str:
+        txt = bloco.get_text(' ', strip=True)
+        # Ex.: 9h00, 14h00
+        m = re.search(r'\b(\d{1,2})h(\d{2})\b', txt)
+        return m.group(0) if m else None
+
+    def _extrair_local(self, bloco) -> str:
+        txt = bloco.get_text(' ', strip=True)
+        m = re.search(r'Anexo\s+II[^\n]+Plen[aá]rio[^\n]+\d+', txt, re.I)
+        return m.group(0).strip() if m else 'Senado Federal'
+
+    def _extrair_link(self, bloco, titulo: str) -> str:
+        a = bloco.find('a', href=True)
+        if a and a['href']:
+            href = a['href']
+            if href.startswith('http'): return href
+            if href.startswith('/'):
+                return 'https://www25.senado.leg.br' + href
+        # fallback: usar página base
+        return self.BASE_URL
+
+    def _inferir_tipo(self, titulo: str) -> str:
+        if not titulo:
+            return 'Sessão'
+        if re.search(r'Audi[êe]ncia', titulo, re.I):
+            return 'Audiência Pública'
+        if re.search(r'Reuni', titulo, re.I):
+            return 'Reunião'
+        if re.search(r'Sess', titulo, re.I):
+            return 'Sessão'
+        return 'Evento Legislativo'
+
+    def _inferir_tema(self, titulo: str, contexto: str) -> str:
+        base = f"{titulo} {contexto}".lower()
+        if any(k in base for k in ['meio ambiente','saneamento','resíduos','clima']):
+            return 'Meio Ambiente e Saneamento'
+        if any(k in base for k in ['educa', 'escola', 'universidade']):
+            return 'Educação'
+        if any(k in base for k in ['saúde','hospital']):
+            return 'Saúde'
+        if any(k in base for k in ['previd', 'aposent']):
+            return 'Previdência'
+        return 'Jurídico'
+
+    def _formatar_datas(self, horario: str):
+        hoje = datetime.now().strftime('%d/%m/%Y')
+        hora = 'às ' + horario.replace('h', ':') if horario else 'às 00:00'
+        inicio = f"{hoje} {hora}"
+        fim = f"{hoje} {hora}"
+        return inicio, fim
+
+    def _formatar_nome_com_comissao(self, titulo: str, comissao: str) -> str:
+        if comissao and comissao not in titulo:
+            return f"{titulo} - {comissao}"
+        return titulo

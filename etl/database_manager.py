@@ -135,16 +135,32 @@ class DatabaseManager:
                 """, (nome, descricao, palavras_chave))
             conn.commit()
 
+    def _ensure_eventos_extra_columns(self):
+        """Garante que colunas novas existam em eventos (comissao, finalidade)."""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.execute("PRAGMA table_info(eventos)")
+                cols = {row[1] for row in cursor.fetchall()}
+                if 'comissao' not in cols:
+                    conn.execute("ALTER TABLE eventos ADD COLUMN comissao TEXT")
+                if 'finalidade' not in cols:
+                    conn.execute("ALTER TABLE eventos ADD COLUMN finalidade TEXT")
+                conn.commit()
+        except Exception as e:
+            print(f"Aviso ao ajustar colunas de eventos: {e}")
+
     def insert_evento(self, evento: Dict) -> bool:
         """Insere ou atualiza um evento"""
         try:
+            # Garantir colunas extras
+            self._ensure_eventos_extra_columns()
             with sqlite3.connect(self.db_path) as conn:
                 conn.execute("""
                     INSERT OR REPLACE INTO eventos (
                         evento_id_externo, nome, data_inicio, data_fim, situacao,
                         tema, tipo_evento, local_evento, link_evento, area_tecnica,
-                        fonte, data_atualizacao
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        fonte, comissao, finalidade, data_atualizacao
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, (
                     evento['evento_id_externo'],
                     evento['nome'],
@@ -157,6 +173,8 @@ class DatabaseManager:
                     evento.get('link_evento'),
                     evento.get('area_tecnica'),
                     evento.get('fonte'),
+                    evento.get('comissao'),
+                    evento.get('finalidade'),
                     datetime.now().isoformat()
                 ))
                 conn.commit()

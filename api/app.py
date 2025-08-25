@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 import sqlite3
 import os
@@ -11,11 +11,16 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from etl.database_manager import DatabaseManager
 from etl.sample_data import get_sample_statistics
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='../web', static_url_path='')
 CORS(app)
 
 # Inicializar gerenciador de banco
 db_manager = DatabaseManager()
+
+@app.route('/')
+def index():
+    """Serve a página principal do dashboard"""
+    return send_from_directory('../web', 'index.html')
 
 @app.route('/api/health')
 def health_check():

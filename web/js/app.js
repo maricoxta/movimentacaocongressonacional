@@ -13,6 +13,7 @@ let currentDateFilter = {
 document.addEventListener('DOMContentLoaded', function() {
     initializeApp();
     setupFormListeners();
+    setupEventListeners();
 });
 
 async function initializeApp() {
@@ -31,6 +32,79 @@ async function initializeApp() {
         console.error('Erro ao inicializar aplicação:', error);
         hideLoading();
         showError('Erro ao carregar dados. Tente novamente.');
+    }
+}
+
+// Configurar event listeners
+function setupEventListeners() {
+    // Botão de atualizar
+    const refreshBtn = document.getElementById('refreshBtn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', refreshData);
+    }
+    
+    // Botão de aplicar filtro
+    const applyFilterBtn = document.getElementById('applyFilterBtn');
+    if (applyFilterBtn) {
+        applyFilterBtn.addEventListener('click', applyDateFilter);
+    }
+    
+    // Botão voltar do dashboard
+    const backBtn = document.getElementById('backBtn');
+    if (backBtn) {
+        backBtn.addEventListener('click', showAreaSelection);
+    }
+    
+    // Botão voltar dos eventos não categorizados
+    const backUncategorizedBtn = document.getElementById('backUncategorizedBtn');
+    if (backUncategorizedBtn) {
+        backUncategorizedBtn.addEventListener('click', showAreaSelection);
+    }
+    
+    // Botão adicionar proposição
+    const addProposicaoBtn = document.getElementById('addProposicaoBtn');
+    if (addProposicaoBtn) {
+        addProposicaoBtn.addEventListener('click', showAddProposicaoModal);
+    }
+    
+    // Botão fechar notificação
+    const closeNotificationBtn = document.getElementById('closeNotificationBtn');
+    if (closeNotificationBtn) {
+        closeNotificationBtn.addEventListener('click', closeNotification);
+    }
+    
+    // Botão fechar modal de proposição
+    const closeAddProposicaoBtn = document.getElementById('closeAddProposicaoBtn');
+    if (closeAddProposicaoBtn) {
+        closeAddProposicaoBtn.addEventListener('click', closeAddProposicaoModal);
+    }
+    
+    // Botão cancelar proposição
+    const cancelProposicaoBtn = document.getElementById('cancelProposicaoBtn');
+    if (cancelProposicaoBtn) {
+        cancelProposicaoBtn.addEventListener('click', closeAddProposicaoModal);
+    }
+    
+    // Filtros de eventos
+    const statusFilter = document.getElementById('statusFilter');
+    if (statusFilter) {
+        statusFilter.addEventListener('change', filterEvents);
+    }
+    
+    const typeFilter = document.getElementById('typeFilter');
+    if (typeFilter) {
+        typeFilter.addEventListener('change', filterEvents);
+    }
+    
+    // Filtros de data
+    const startDate = document.getElementById('startDate');
+    if (startDate) {
+        startDate.addEventListener('change', updateEventCounts);
+    }
+    
+    const endDate = document.getElementById('endDate');
+    if (endDate) {
+        endDate.addEventListener('change', updateEventCounts);
     }
 }
 
@@ -61,9 +135,17 @@ function setupFormListeners() {
 async function loadAreas() {
     try {
         const response = await fetch(`${API_BASE_URL}/areas`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const areas = await response.json();
         
         const areaGrid = document.getElementById('areaGrid');
+        if (!areaGrid) {
+            console.error('Elemento areaGrid não encontrado');
+            return;
+        }
+        
         areaGrid.innerHTML = '';
         
         areas.forEach(area => {
@@ -135,14 +217,23 @@ async function loadAreaData(areaName) {
     try {
         // Carregar eventos
         const eventsResponse = await fetch(`${API_BASE_URL}/eventos?area=${encodeURIComponent(areaName)}`);
+        if (!eventsResponse.ok) {
+            throw new Error(`HTTP error! status: ${eventsResponse.status}`);
+        }
         const events = await eventsResponse.json();
         
         // Carregar estatísticas
         const statsResponse = await fetch(`${API_BASE_URL}/estatisticas?area=${encodeURIComponent(areaName)}`);
+        if (!statsResponse.ok) {
+            throw new Error(`HTTP error! status: ${statsResponse.status}`);
+        }
         const stats = await statsResponse.json();
         
         // Carregar proposições
         const proposicoesResponse = await fetch(`${API_BASE_URL}/proposicoes?area=${encodeURIComponent(areaName)}`);
+        if (!proposicoesResponse.ok) {
+            throw new Error(`HTTP error! status: ${proposicoesResponse.status}`);
+        }
         const proposicoes = await proposicoesResponse.json();
         
         updateDashboard(areaName, events, stats, proposicoes);
@@ -156,16 +247,23 @@ async function loadAreaData(areaName) {
 // Atualizar dashboard
 function updateDashboard(areaName, events, stats, proposicoes) {
     // Atualizar título
-    document.getElementById('currentAreaTitle').textContent = areaName;
+    const titleElement = document.getElementById('currentAreaTitle');
+    if (titleElement) {
+        titleElement.textContent = areaName;
+    }
     
     // Atualizar estatísticas de eventos
     const totalEvents = events.length;
     const ongoingEvents = events.filter(e => e.situacao === 'Em Andamento').length;
     const completedEvents = events.filter(e => e.situacao === 'Encerrada').length;
     
-    document.getElementById('totalEvents').textContent = totalEvents;
-    document.getElementById('ongoingEvents').textContent = ongoingEvents;
-    document.getElementById('completedEvents').textContent = completedEvents;
+    const totalElement = document.getElementById('totalEvents');
+    const ongoingElement = document.getElementById('ongoingEvents');
+    const completedElement = document.getElementById('completedEvents');
+    
+    if (totalElement) totalElement.textContent = totalEvents;
+    if (ongoingElement) ongoingElement.textContent = ongoingEvents;
+    if (completedElement) completedElement.textContent = completedEvents;
     
     // Atualizar estatísticas de proposições
     updateStatisticsTable(stats);
@@ -182,29 +280,34 @@ function updateDashboard(areaName, events, stats, proposicoes) {
 // Atualizar tabela de estatísticas
 function updateStatisticsTable(stats) {
     // Posicionamento CNM
-    document.getElementById('cnmFavoravel').textContent = stats.cnm_favoravel || 0;
-    document.getElementById('cnmDesfavoravel').textContent = stats.cnm_desfavoravel || 0;
-    document.getElementById('cnmNeutro').textContent = stats.cnm_neutro || 0;
+    const elements = {
+        'cnmFavoravel': stats.cnm_favoravel || 0,
+        'cnmDesfavoravel': stats.cnm_desfavoravel || 0,
+        'cnmNeutro': stats.cnm_neutro || 0,
+        'camaraCnmFavoravel': stats.camara_cnm_favoravel || 0,
+        'camaraCnmDesfavoravel': stats.camara_cnm_desfavoravel || 0,
+        'camaraCnmNeutro': stats.camara_cnm_neutro || 0,
+        'senadoCnmFavoravel': stats.senado_cnm_favoravel || 0,
+        'senadoCnmDesfavoravel': stats.senado_cnm_desfavoravel || 0,
+        'senadoCnmNeutro': stats.senado_cnm_neutro || 0,
+        'presidenciaCnmFavoravel': stats.presidencia_cnm_favoravel || 0,
+        'presidenciaCnmDesfavoravel': stats.presidencia_cnm_desfavoravel || 0,
+        'presidenciaCnmNeutro': stats.presidencia_cnm_neutro || 0
+    };
     
-    // Aprovação na Câmara
-    document.getElementById('camaraCnmFavoravel').textContent = stats.camara_cnm_favoravel || 0;
-    document.getElementById('camaraCnmDesfavoravel').textContent = stats.camara_cnm_desfavoravel || 0;
-    document.getElementById('camaraCnmNeutro').textContent = stats.camara_cnm_neutro || 0;
-    
-    // Aprovação no Senado
-    document.getElementById('senadoCnmFavoravel').textContent = stats.senado_cnm_favoravel || 0;
-    document.getElementById('senadoCnmDesfavoravel').textContent = stats.senado_cnm_desfavoravel || 0;
-    document.getElementById('senadoCnmNeutro').textContent = stats.senado_cnm_neutro || 0;
-    
-    // Sancionado pela Presidência
-    document.getElementById('presidenciaCnmFavoravel').textContent = stats.presidencia_cnm_favoravel || 0;
-    document.getElementById('presidenciaCnmDesfavoravel').textContent = stats.presidencia_cnm_desfavoravel || 0;
-    document.getElementById('presidenciaCnmNeutro').textContent = stats.presidencia_cnm_neutro || 0;
+    Object.keys(elements).forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.textContent = elements[id];
+        }
+    });
 }
 
 // Atualizar tabela de proposições
 function updateProposicoesTable(proposicoes) {
     const tbody = document.getElementById('proposicoesTableBody');
+    if (!tbody) return;
+    
     tbody.innerHTML = '';
     
     proposicoes.forEach(proposicao => {
@@ -239,6 +342,8 @@ function updateProposicoesTable(proposicoes) {
 // Renderizar eventos
 function renderEvents(events) {
     const eventsGrid = document.getElementById('eventsGrid');
+    if (!eventsGrid) return;
+    
     eventsGrid.innerHTML = '';
     
     if (events.length === 0) {
@@ -259,6 +364,26 @@ function createEventCard(event) {
     
     const statusClass = event.situacao.toLowerCase().replace(' ', '-');
     
+    // Validar e preparar o link do evento
+    let eventLink = event.link_evento || '';
+    let linkDisplay = 'Ver detalhes do evento';
+    let linkClass = 'event-link';
+    
+    // Limpar e validar o link
+    eventLink = eventLink.toString().trim();
+    
+    // Se não há link ou link inválido, desabilitar
+    if (!eventLink || eventLink === '' || eventLink === 'null' || eventLink === 'undefined' || eventLink === 'None') {
+        eventLink = '#';
+        linkDisplay = 'Link não disponível';
+        linkClass = 'event-link disabled';
+    } else {
+        // Garantir que o link tenha protocolo
+        if (!eventLink.startsWith('http://') && !eventLink.startsWith('https://')) {
+            eventLink = 'https://' + eventLink;
+        }
+    }
+    
     card.innerHTML = `
         <div class="event-header">
             <h4 class="event-title">${event.nome}</h4>
@@ -274,6 +399,10 @@ function createEventCard(event) {
                 <span><strong>Fim:</strong> ${event.data_fim}</span>
             </div>
             <div class="event-detail">
+                <i class="fas fa-sitemap"></i>
+                <span><strong>Comissão:</strong> ${event.comissao || '-'} </span>
+            </div>
+            <div class="event-detail">
                 <i class="fas fa-tag"></i>
                 <span><strong>Tema:</strong> ${event.tema}</span>
             </div>
@@ -285,11 +414,13 @@ function createEventCard(event) {
                 <i class="fas fa-info-circle"></i>
                 <span><strong>Tipo:</strong> ${event.tipo_evento}</span>
             </div>
+            ${event.finalidade ? `<div class="event-detail"><i class="fas fa-bullseye"></i><span><strong>Finalidade:</strong> ${event.finalidade}</span></div>` : ''}
         </div>
-        <div class="event-link">
-            <a href="${event.link_evento}" target="_blank">
+        <div class="${linkClass}">
+            <a href="${eventLink}" target="_blank" rel="noopener noreferrer" 
+               ${eventLink === '#' ? 'onclick="event.preventDefault(); alert(\'Link não disponível para este evento.\');"' : ''}>
                 <i class="fas fa-external-link-alt"></i>
-                Ver detalhes do evento
+                ${linkDisplay}
             </a>
         </div>
     `;
@@ -299,8 +430,8 @@ function createEventCard(event) {
 
 // Filtrar eventos
 function filterEvents() {
-    const statusFilter = document.getElementById('statusFilter').value;
-    const typeFilter = document.getElementById('typeFilter').value;
+    const statusFilter = document.getElementById('statusFilter')?.value || '';
+    const typeFilter = document.getElementById('typeFilter')?.value || '';
     
     filteredEvents = allEvents.filter(event => {
         const statusMatch = !statusFilter || event.situacao === statusFilter;
@@ -314,11 +445,15 @@ function filterEvents() {
 // Atualizar contadores de eventos
 async function updateEventCounts() {
     try {
-        const startDate = document.getElementById('startDate').value;
-        const endDate = document.getElementById('endDate').value;
+        const startDate = document.getElementById('startDate')?.value || '';
+        const endDate = document.getElementById('endDate')?.value || '';
         
         // Atualizar contadores para cada área
-        const areas = await fetch(`${API_BASE_URL}/areas`).then(r => r.json());
+        const areasResponse = await fetch(`${API_BASE_URL}/areas`);
+        if (!areasResponse.ok) {
+            throw new Error(`HTTP error! status: ${areasResponse.status}`);
+        }
+        const areas = await areasResponse.json();
         
         for (const area of areas) {
             const countElement = document.getElementById(`count-${area.nome.replace(/\s+/g, '-')}`);
@@ -330,8 +465,10 @@ async function updateEventCounts() {
                 });
                 
                 const response = await fetch(`${API_BASE_URL}/eventos?${params}`);
-                const events = await response.json();
-                countElement.textContent = events.length;
+                if (response.ok) {
+                    const events = await response.json();
+                    countElement.textContent = events.length;
+                }
             }
         }
         
@@ -344,8 +481,10 @@ async function updateEventCounts() {
             });
             
             const response = await fetch(`${API_BASE_URL}/eventos/nao-categorizados?${params}`);
-            const events = await response.json();
-            uncategorizedCount.textContent = events.length;
+            if (response.ok) {
+                const events = await response.json();
+                uncategorizedCount.textContent = events.length;
+            }
         }
         
     } catch (error) {
@@ -355,8 +494,8 @@ async function updateEventCounts() {
 
 // Aplicar filtro de data
 function applyDateFilter() {
-    const startDate = document.getElementById('startDate').value;
-    const endDate = document.getElementById('endDate').value;
+    const startDate = document.getElementById('startDate')?.value || '';
+    const endDate = document.getElementById('endDate')?.value || '';
     
     if (startDate && endDate && startDate > endDate) {
         showError('A data de início deve ser anterior à data de fim.');
@@ -375,16 +514,26 @@ function applyDateFilter() {
 
 // Mostrar dashboard
 function showDashboard() {
-    document.querySelector('.area-selection').style.display = 'none';
-    document.getElementById('dashboardContent').style.display = 'block';
-    document.getElementById('uncategorizedSection').style.display = 'none';
+    const areaSelection = document.querySelector('.area-selection');
+    const dashboardContent = document.getElementById('dashboardContent');
+    const uncategorizedSection = document.getElementById('uncategorizedSection');
+    
+    if (areaSelection) areaSelection.style.display = 'none';
+    if (dashboardContent) dashboardContent.style.display = 'block';
+    if (uncategorizedSection) uncategorizedSection.style.display = 'none';
 }
 
 // Mostrar seleção de áreas
 function showAreaSelection() {
-    document.querySelector('.area-selection').style.display = 'block';
-    document.getElementById('dashboardContent').style.display = 'none';
-    document.getElementById('uncategorizedSection').style.display = 'none';
+    const areaSelection = document.querySelector('.area-selection');
+    const dashboardContent = document.getElementById('dashboardContent');
+    const uncategorizedSection = document.getElementById('uncategorizedSection');
+    
+    if (areaSelection) areaSelection.style.display = 'block';
+    if (dashboardContent) dashboardContent.style.display = 'none';
+    if (uncategorizedSection) uncategorizedSection.style.display = 'none';
+    
+    currentArea = null;
 }
 
 // Mostrar eventos não categorizados
@@ -393,19 +542,28 @@ async function showUncategorizedEvents() {
     
     try {
         const response = await fetch(`${API_BASE_URL}/eventos/nao-categorizados`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const events = await response.json();
         
         const eventsGrid = document.getElementById('uncategorizedEventsGrid');
-        eventsGrid.innerHTML = '';
+        if (eventsGrid) {
+            eventsGrid.innerHTML = '';
+            
+            events.forEach(event => {
+                const eventCard = createEventCard(event);
+                eventsGrid.appendChild(eventCard);
+            });
+        }
         
-        events.forEach(event => {
-            const eventCard = createEventCard(event);
-            eventsGrid.appendChild(eventCard);
-        });
+        const areaSelection = document.querySelector('.area-selection');
+        const dashboardContent = document.getElementById('dashboardContent');
+        const uncategorizedSection = document.getElementById('uncategorizedSection');
         
-        document.querySelector('.area-selection').style.display = 'none';
-        document.getElementById('dashboardContent').style.display = 'none';
-        document.getElementById('uncategorizedSection').style.display = 'block';
+        if (areaSelection) areaSelection.style.display = 'none';
+        if (dashboardContent) dashboardContent.style.display = 'none';
+        if (uncategorizedSection) uncategorizedSection.style.display = 'block';
         
         hideLoading();
     } catch (error) {
@@ -419,6 +577,9 @@ async function showUncategorizedEvents() {
 async function loadUncategorizedEvents() {
     try {
         const response = await fetch(`${API_BASE_URL}/eventos/nao-categorizados`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const events = await response.json();
         
         const countElement = document.getElementById('count-uncategorized');
@@ -465,6 +626,9 @@ function setupAutoUpdate() {
 async function checkForNewEvents() {
     try {
         const response = await fetch(`${API_BASE_URL}/eventos/novos`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const newEvents = await response.json();
         
         if (newEvents.length > 0) {
@@ -484,33 +648,51 @@ function showNewEventNotification(event) {
     const modal = document.getElementById('notificationModal');
     const content = document.getElementById('notificationContent');
     
-    content.innerHTML = `
-        <div class="new-event-notification">
-            <h4>${event.nome}</h4>
-            <p><strong>Data:</strong> ${event.data_inicio}</p>
-            <p><strong>Local:</strong> ${event.local_evento}</p>
-            <p><strong>Área:</strong> ${event.area_tecnica || 'Não categorizado'}</p>
-        </div>
-    `;
-    
-    modal.style.display = 'flex';
+    if (modal && content) {
+        content.innerHTML = `
+            <div class="new-event-notification">
+                <h4>${event.nome}</h4>
+                <p><strong>Data:</strong> ${event.data_inicio}</p>
+                <p><strong>Local:</strong> ${event.local_evento}</p>
+                <p><strong>Área:</strong> ${event.area_tecnica || 'Não categorizado'}</p>
+            </div>
+        `;
+        
+        modal.style.display = 'flex';
+    }
 }
 
 // Fechar notificação
 function closeNotification() {
-    document.getElementById('notificationModal').style.display = 'none';
+    const modal = document.getElementById('notificationModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
 }
 
 // Mostrar modal de adicionar proposição
 function showAddProposicaoModal() {
-    document.getElementById('addProposicaoModal').style.display = 'flex';
+    const modal = document.getElementById('addProposicaoModal');
+    if (modal) {
+        modal.style.display = 'flex';
+    }
 }
 
 // Fechar modal de adicionar proposição
 function closeAddProposicaoModal() {
-    document.getElementById('addProposicaoModal').style.display = 'none';
-    document.getElementById('proposicaoForm').reset();
-    document.getElementById('charCount').textContent = '0/1500';
+    const modal = document.getElementById('addProposicaoModal');
+    const form = document.getElementById('proposicaoForm');
+    const charCount = document.getElementById('charCount');
+    
+    if (modal) {
+        modal.style.display = 'none';
+    }
+    if (form) {
+        form.reset();
+    }
+    if (charCount) {
+        charCount.textContent = '0/1500';
+    }
 }
 
 // Manipular envio do formulário de proposição
@@ -596,16 +778,25 @@ async function deleteProposicao(id) {
 function updateLastUpdateTime() {
     const now = new Date();
     const timeString = now.toLocaleString('pt-BR');
-    document.getElementById('lastUpdate').textContent = `Última atualização: ${timeString}`;
+    const lastUpdateElement = document.getElementById('lastUpdate');
+    if (lastUpdateElement) {
+        lastUpdateElement.textContent = `Última atualização: ${timeString}`;
+    }
 }
 
 // Funções de UI
 function showLoading() {
-    document.getElementById('loadingOverlay').style.display = 'flex';
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    if (loadingOverlay) {
+        loadingOverlay.style.display = 'flex';
+    }
 }
 
 function hideLoading() {
-    document.getElementById('loadingOverlay').style.display = 'none';
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    if (loadingOverlay) {
+        loadingOverlay.style.display = 'none';
+    }
 }
 
 function showError(message) {

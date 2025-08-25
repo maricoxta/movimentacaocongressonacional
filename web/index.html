@@ -23,7 +23,7 @@
                         <span id="lastUpdate">Última atualização: --</span>
                     </div>
                     <div class="refresh-btn">
-                        <button id="refreshBtn" onclick="refreshData()">
+                        <button id="refreshBtn">
                             <i class="fas fa-sync-alt"></i>
                             Atualizar
                         </button>
@@ -44,14 +44,14 @@
                 <div class="period-filter">
                     <div class="filter-group">
                         <label for="startDate">Data Início:</label>
-                        <input type="date" id="startDate" onchange="updateEventCounts()">
+                        <input type="date" id="startDate">
                     </div>
                     <div class="filter-group">
                         <label for="endDate">Data Fim:</label>
-                        <input type="date" id="endDate" onchange="updateEventCounts()">
+                        <input type="date" id="endDate">
                     </div>
                     <div class="filter-group">
-                        <button onclick="applyDateFilter()" class="apply-filter-btn">
+                        <button id="applyFilterBtn" class="apply-filter-btn">
                             <i class="fas fa-filter"></i>
                             Aplicar Filtro
                         </button>
@@ -67,7 +67,7 @@
             <section class="dashboard-content" id="dashboardContent" style="display: none;">
                 <!-- Area Header -->
                 <div class="area-header">
-                    <button class="back-btn" onclick="showAreaSelection()">
+                    <button class="back-btn" id="backBtn">
                         <i class="fas fa-arrow-left"></i>
                         Voltar
                     </button>
@@ -169,7 +169,7 @@
                 <section class="proposicoes-section">
                     <div class="section-header">
                         <h3>Tabela de Proposições</h3>
-                        <button class="add-proposicao-btn" onclick="showAddProposicaoModal()">
+                        <button class="add-proposicao-btn" id="addProposicaoBtn">
                             <i class="fas fa-plus"></i>
                             Adicionar Proposição
                         </button>
@@ -206,13 +206,13 @@
                     <div class="section-header">
                         <h3>Eventos da Semana</h3>
                         <div class="filters">
-                            <select id="statusFilter" onchange="filterEvents()">
+                            <select id="statusFilter">
                                 <option value="">Todos os Status</option>
                                 <option value="Em Andamento">Em Andamento</option>
                                 <option value="Encerrada">Encerrada</option>
                                 <option value="Cancelada">Cancelada</option>
                             </select>
-                            <select id="typeFilter" onchange="filterEvents()">
+                            <select id="typeFilter">
                                 <option value="">Todos os Tipos</option>
                                 <option value="Audiência Pública">Audiência Pública</option>
                                 <option value="Sessão">Sessão</option>
@@ -231,7 +231,7 @@
             <section class="uncategorized-section" id="uncategorizedSection" style="display: none;">
                 <div class="section-header">
                     <h3>Eventos Não Categorizados</h3>
-                    <button class="back-btn" onclick="showAreaSelection()">
+                    <button class="back-btn" id="backUncategorizedBtn">
                         <i class="fas fa-arrow-left"></i>
                         Voltar
                     </button>
@@ -248,7 +248,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>Novo Evento</h3>
-                <button class="close-btn" onclick="closeNotification()">
+                <button class="close-btn" id="closeNotificationBtn">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -263,7 +263,7 @@
         <div class="modal-content large">
             <div class="modal-header">
                 <h3>Adicionar Proposição</h3>
-                <button class="close-btn" onclick="closeAddProposicaoModal()">
+                <button class="close-btn" id="closeAddProposicaoBtn">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -358,7 +358,7 @@
                     </div>
                     
                     <div class="form-actions">
-                        <button type="button" onclick="closeAddProposicaoModal()" class="btn-secondary">Cancelar</button>
+                        <button type="button" id="cancelProposicaoBtn" class="btn-secondary">Cancelar</button>
                         <button type="submit" class="btn-primary">Salvar Proposição</button>
                     </div>
                 </form>

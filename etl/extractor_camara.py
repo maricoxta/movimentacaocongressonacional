@@ -13,7 +13,7 @@ class CamaraExtractor:
         })
     
     def get_eventos_comissoes(self, data_inicio: str = None, data_fim: str = None) -> List[Dict]:
-        """Extrai eventos das comissões da Câmara - apenas atividades legislativas"""
+        """Extrai eventos das comissões da Câmara - apenas Sessões e Reuniões legislativas"""
         if not data_inicio:
             data_inicio = datetime.now().strftime("%Y-%m-%d")
         if not data_fim:
@@ -24,14 +24,14 @@ class CamaraExtractor:
         # Buscar comissões legislativas principais
         comissoes_legislativas = [
             'CCJC',  # Constituição e Justiça
-            'CD',    # Defesa Nacional
             'CE',    # Educação
             'CFT',   # Finanças e Tributação
-            'CI',    # Indústria
             'CMO',   # Orçamento
             'CREDN', # Relações Exteriores
             'CTASP', # Trabalho
-            'CUTI'   # Urbanismo
+            'CME',   # Minas e Energia
+            'CSSF',  # Seguridade Social e Família
+            'CVT'    # Viação e Transportes
         ]
         
         for sigla in comissoes_legislativas:
@@ -66,7 +66,7 @@ class CamaraExtractor:
         return None
     
     def _get_eventos_comissao(self, comissao_id: int, data_inicio: str, data_fim: str) -> List[Dict]:
-        """Busca eventos de uma comissão específica"""
+        """Busca eventos de uma comissão específica (apenas Reuniões)"""
         eventos = []
         
         url = f"{self.base_url}/orgaos/{comissao_id}/eventos"
@@ -82,8 +82,8 @@ class CamaraExtractor:
             dados = response.json()['dados']
             
             for evento in dados:
-                # Filtrar apenas atividades legislativas
-                if self._eh_atividade_legislativa(evento):
+                # Filtrar apenas Reuniões legislativas (excluir audiências/solenidades)
+                if self._eh_reuniao_legislativa(evento):
                     evento_processado = self._processar_evento_camara(evento)
                     if evento_processado:
                         eventos.append(evento_processado)
@@ -93,42 +93,21 @@ class CamaraExtractor:
         
         return eventos
     
-    def _eh_atividade_legislativa(self, evento: Dict) -> bool:
-        """Verifica se o evento é uma atividade legislativa"""
-        tipo_evento = evento.get('tipo', '').lower()
-        titulo = evento.get('titulo', '').lower()
+    def _eh_reuniao_legislativa(self, evento: Dict) -> bool:
+        """Retorna True somente para Reuniões legislativas."""
+        tipo_evento = (evento.get('tipo') or '').lower()
+        titulo = (evento.get('titulo') or '').lower()
         
-        # Tipos de atividades legislativas
-        atividades_legislativas = [
-            'audiência pública',
-            'reunião',
-            'sessão',
-            'debate',
-            'votação',
-            'apreciação',
-            'discussão',
-            'deliberação'
-        ]
-        
-        # Verificar se o tipo do evento é legislativo
-        for atividade in atividades_legislativas:
-            if atividade in tipo_evento:
-                return True
-        
-        # Verificar se o título indica atividade legislativa
-        palavras_legislativas = [
-            'projeto', 'lei', 'proposta', 'matéria', 'votação', 'apreciação',
-            'debate', 'discussão', 'deliberação', 'audiência', 'reunião'
-        ]
-        
-        for palavra in palavras_legislativas:
-            if palavra in titulo:
-                return True
-        
+        # APENAS Reuniões
+        if 'reuni' in tipo_evento or 'reuni' in titulo:
+            # EXCLUIR TODOS os outros tipos de eventos
+            if any(p in titulo for p in ['solenidade', 'homenagem', 'lançamento', 'sessão solene', 'audiência', 'audiencia', 'conferência', 'conferencia', 'seminário', 'seminario', 'cúpula', 'cupula', 'palestra', 'exposição', 'exposicao', 'visita', 'debate', 'workshop', 'curso', 'simpósio', 'simposio']):
+                return False
+            return True
         return False
     
     def get_sessoes_plenario(self, data_inicio: str = None, data_fim: str = None) -> List[Dict]:
-        """Extrai sessões do plenário - apenas atividades legislativas"""
+        """Extrai sessões do plenário (apenas Sessões)"""
         if not data_inicio:
             data_inicio = datetime.now().strftime("%Y-%m-%d")
         if not data_fim:
@@ -163,14 +142,14 @@ class CamaraExtractor:
     
     def _eh_sessao_plenario(self, evento: Dict) -> bool:
         """Verifica se o evento é uma sessão do plenário"""
-        tipo_evento = evento.get('tipo', '').lower()
-        titulo = evento.get('titulo', '').lower()
+        tipo_evento = (evento.get('tipo') or '').lower()
+        titulo = (evento.get('titulo') or '').lower()
         
-        # Verificar se é sessão do plenário
-        if 'sessão' in tipo_evento and 'plenária' in tipo_evento:
-            return True
-        
-        if 'plenário' in titulo or 'sessão plenária' in titulo:
+        # APENAS Sessões
+        if 'sess' in tipo_evento or 'sessão' in titulo or 'plenár' in titulo:
+            # EXCLUIR TODOS os outros tipos de eventos
+            if any(p in titulo for p in ['solene', 'solenidade', 'homenagem', 'audiência', 'audiencia', 'conferência', 'conferencia', 'seminário', 'seminario', 'cúpula', 'cupula', 'palestra', 'exposição', 'exposicao', 'visita', 'debate', 'workshop', 'curso', 'simpósio', 'simposio']):
+                return False
             return True
         
         return False
@@ -197,6 +176,22 @@ class CamaraExtractor:
             # Gerar link real do evento
             link_evento = self._gerar_link_evento(evento_raw)
             
+            # Comissão e finalidade (se disponíveis)
+            orgao = evento_raw.get('orgao') or {}
+            comissao = orgao.get('nome')
+            descricao = (evento_raw.get('descricao') or '').strip()
+            finalidade = None
+            if descricao:
+                # usar primeira frase longa como finalidade
+                partes = re.split(r'[\.!?]', descricao)
+                for p in partes:
+                    p = p.strip()
+                    if len(p) > 20:
+                        finalidade = p
+                        break
+                if not finalidade:
+                    finalidade = descricao
+            
             evento = {
                 'evento_id_externo': f"camara_{evento_raw.get('id')}",
                 'nome': titulo,
@@ -208,7 +203,9 @@ class CamaraExtractor:
                 'local_evento': local,
                 'link_evento': link_evento,
                 'area_tecnica': None,  # Será categorizado posteriormente
-                'fonte': 'camara'
+                'fonte': 'Camara',
+                'comissao': comissao,
+                'finalidade': finalidade
             }
             
             return evento
@@ -220,40 +217,18 @@ class CamaraExtractor:
     def _obter_titulo_real(self, evento_raw: Dict) -> str:
         """Obtém o título real do evento"""
         titulo = evento_raw.get('titulo', '')
-        
-        # Se o título está vazio ou é genérico, tentar extrair de outros campos
-        if not titulo or titulo.strip() == '' or 'evento' in titulo.lower():
-            # Tentar extrair de descrição
-            descricao = evento_raw.get('descricao', '')
-            if descricao and len(descricao) > 10:
-                # Pegar primeira linha da descrição como título
-                linhas = descricao.split('\n')
-                for linha in linhas:
-                    linha = linha.strip()
-                    if linha and len(linha) > 10:
-                        return linha[:200]  # Limitar a 200 caracteres
-            
-            # Tentar extrair de tema
-            tema = evento_raw.get('tema', '')
-            if tema:
-                return f"{tema} - {evento_raw.get('orgao', {}).get('nome', 'Câmara dos Deputados')}"
-            
-            # Gerar título baseado no tipo e órgão
-            tipo = evento_raw.get('tipo', 'Evento')
-            orgao = evento_raw.get('orgao', {}).get('nome', 'Câmara dos Deputados')
-            return f"{tipo} - {orgao}"
-        
-        return titulo
+        if titulo:
+            return titulo
+        # fallback
+        tipo = evento_raw.get('tipo', 'Evento')
+        orgao = evento_raw.get('orgao', {}).get('nome', 'Câmara dos Deputados')
+        return f"{tipo} - {orgao}"
     
     def _gerar_link_evento(self, evento_raw: Dict) -> str:
         """Gera link real para o evento"""
         evento_id = evento_raw.get('id')
-        
         if evento_id:
-            # Link para evento específico da Câmara
             return f"https://www.camara.leg.br/eventos/{evento_id}"
-        
-        # Link genérico da agenda da Câmara
         return "https://www.camara.leg.br/eventos"
     
     def _extrair_tema_evento(self, evento_raw: Dict) -> str:
@@ -261,14 +236,9 @@ class CamaraExtractor:
         tema = evento_raw.get('tema')
         if tema:
             return tema
-        
-        # Tentar extrair tema do título ou descrição
         titulo = evento_raw.get('titulo', '')
         descricao = evento_raw.get('descricao', '')
-        
         texto_completo = f"{titulo} {descricao}".lower()
-        
-        # Palavras-chave para identificar temas
         temas_keywords = {
             'Educação': ['educação', 'escola', 'universidade', 'ensino'],
             'Saúde': ['saúde', 'hospital', 'medicamento', 'vacina'],
@@ -278,18 +248,15 @@ class CamaraExtractor:
             'Infraestrutura': ['infraestrutura', 'obra', 'construção', 'transporte'],
             'Jurídico': ['legislação', 'lei', 'direito', 'constituição']
         }
-        
         for tema, keywords in temas_keywords.items():
             if any(keyword in texto_completo for keyword in keywords):
                 return tema
-        
-        return "Assuntos Gerais"
+        return "Jurídico"
     
     def _formatar_data_hora(self, data_hora_str: str) -> str:
         """Formata data e hora no formato especificado"""
         if not data_hora_str:
             return ""
-        
         try:
             dt = datetime.fromisoformat(data_hora_str.replace('Z', '+00:00'))
             data = dt.strftime("%d/%m/%Y")
@@ -301,62 +268,42 @@ class CamaraExtractor:
     def _determinar_situacao(self, situacao_raw: str) -> str:
         """Determina situação do evento"""
         if not situacao_raw:
-            return "Em Andamento"
-        
-        situacao_lower = situacao_raw.lower()
-        if 'encerrada' in situacao_lower or 'finalizada' in situacao_lower:
+            return "Agendada"
+        s = situacao_raw.lower()
+        if 'encerrad' in s:
             return "Encerrada"
-        elif 'cancelada' in situacao_lower:
+        if 'cancelad' in s:
             return "Cancelada"
-        else:
-            return "Em Andamento"
+        if 'agendad' in s:
+            return "Agendada"
+        return "Em Andamento"
     
     def _determinar_tipo_evento(self, tipo_raw: str) -> str:
         """Determina tipo do evento"""
         if not tipo_raw:
             return "Evento"
-        
         tipo_lower = tipo_raw.lower()
-        if 'audiência' in tipo_lower:
-            return "Audiência Pública"
-        elif 'sessão' in tipo_lower:
+        if 'sess' in tipo_lower:
             return "Sessão"
-        elif 'reunião' in tipo_lower:
+        if 'reuni' in tipo_lower:
             return "Reunião"
-        elif 'palestra' in tipo_lower:
-            return "Palestra"
-        else:
-            return tipo_raw
+        return tipo_raw
     
     def _formatar_local(self, local_raw) -> str:
         """Formata local do evento"""
         if not local_raw:
-            return "Local não informado - Câmara dos Deputados"
-        
-        # Se local_raw é um dicionário
+            return "Câmara dos Deputados"
         if isinstance(local_raw, dict):
             nome = local_raw.get('nome')
             predio = local_raw.get('predio')
             sala = local_raw.get('sala')
             andar = local_raw.get('andar')
-            
             partes = []
-            if nome:
-                partes.append(nome)
-            if predio:
-                partes.append(f"Prédio {predio}")
-            if andar:
-                partes.append(f"{andar}º andar")
-            if sala:
-                partes.append(f"Sala {sala}")
-            
-            if partes:
-                return f"{', '.join(partes)} - Câmara dos Deputados"
-            else:
-                return "Câmara dos Deputados"
-        
-        # Se local_raw é uma string
-        elif isinstance(local_raw, str):
+            if nome: partes.append(nome)
+            if predio: partes.append(f"Prédio {predio}")
+            if andar: partes.append(f"{andar}º andar")
+            if sala: partes.append(f"Sala {sala}")
+            return f"{', '.join(partes)} - Câmara dos Deputados" if partes else "Câmara dos Deputados"
+        if isinstance(local_raw, str):
             return f"{local_raw} - Câmara dos Deputados"
-        
         return "Câmara dos Deputados"
