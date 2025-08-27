@@ -9,15 +9,15 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from etl.database_manager import DatabaseManager
-from etl.extractor_camara import CamaraExtractor
-from etl.extractor_senado import ExtractorSenado
+from etl.extractor_camara import CamaraEventos
+from etl.extractor_senado import SenadoAPI
 from etl.categorizador import CategorizadorEventos
 
 class ETLAgendaCongresso:
     def __init__(self):
         self.db_manager = DatabaseManager()
-        self.camara_extractor = CamaraExtractor()
-        self.senado_extractor = ExtractorSenado()
+        self.camara_extractor = CamaraEventos()
+        self.senado_extractor = SenadoAPI()
         self.categorizador = CategorizadorEventos(self.db_manager)
     
     def executar_etl_completo(self):
@@ -172,7 +172,7 @@ class ETLAgendaCongresso:
         
         # Extrair dados reais
         try:
-            senado = ExtractorSenado()
+            senado = SenadoAPI()
             eventos_senado = senado.get_agenda_legislativa(dias=7)
             eventos_total.extend(eventos_senado)
             print(f"Extraídos {len(eventos_senado)} eventos do Senado")
@@ -233,3 +233,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

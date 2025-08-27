@@ -48,7 +48,7 @@ O sistema é composto por:
 ### 1. Clone o repositório
 ```bash
 git clone <url-do-repositorio>
-cd Agenda.teste
+cd acompanhamentocongressonacional
 ```
 
 ### 2. Instale as dependências
@@ -211,7 +211,7 @@ O dashboard é totalmente responsivo:
 
 ### Estrutura de Arquivos
 ```
-Agenda.teste/
+acompanhamentocongressonacional/
 ├── etl/                    # Scripts ETL
 │   ├── database_manager.py
 │   ├── extractor_camara.py

@@ -1,0 +1,35 @@
+[
+    {
+      "id": 1,
+      "numero_projeto": "PL 123/2025",
+      "ementa": "Estabelece normas de saneamento",
+      "casa_iniciadora": "Câmara",
+      "forma_apreciacao": "Urgente",
+      "situacao": "Em análise",
+      "cabe_analise": "Sim",
+      "prazo_analise": "2025-09-01",
+      "analise_realizada": "Não",
+      "posicionamento_cnm": "Favorável",
+      "prioridade": "Alta",
+      "observacao": "Acompanhar tramitação",
+      "area_tecnica": "Saneamento Básico",
+      "documento_analise": null
+    },
+    {
+      "id": 2,
+      "numero_projeto": "PL 456/2025",
+      "ementa": "Plano Diretor Municipal",
+      "casa_iniciadora": "Câmara",
+      "forma_apreciacao": "Normal",
+      "situacao": "Encerrada",
+      "cabe_analise": "Não",
+      "prazo_analise": "2025-08-20",
+      "analise_realizada": "Sim",
+      "posicionamento_cnm": "Neutro",
+      "prioridade": "Média",
+      "observacao": "",
+      "area_tecnica": "Planejamento Urbano",
+      "documento_analise": null
+    }
+  ]
+  

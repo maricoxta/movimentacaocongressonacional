@@ -1,0 +1,86 @@
+  [
+  {
+    "nome": "Infraestrutura e Planejamento Urbano",
+    "descricao": "Área dedicada à gestão do espaço urbano, obras públicas, ordenamento territorial e desenvolvimento das cidades."
+  },
+  {
+    "nome": "Assistência Social",
+    "descricao": "Área voltada à proteção social de indivíduos e famílias em situação de vulnerabilidade e risco social."
+  },
+  {
+    "nome": "Segurança Alimentar",
+    "descricao": "Área responsável por políticas de combate à fome, acesso à alimentação adequada e promoção da nutrição saudável."
+  },
+  {
+    "nome": "Consórcios Públicos",
+    "descricao": "Área que apoia a gestão compartilhada de serviços e políticas públicas entre municípios por meio de consórcios."
+  },
+  {
+    "nome": "Contabilidade Pública",
+    "descricao": "Área que trata da escrituração, controle e transparência das contas públicas municipais."
+  },
+  {
+    "nome": "Cultura",
+    "descricao": "Área responsável pela promoção, preservação e difusão das manifestações culturais e do patrimônio histórico."
+  },
+  {
+    "nome": "Defesa Civil",
+    "descricao": "Área dedicada à prevenção, preparação e resposta a desastres naturais ou situações de emergência."
+  },
+  {
+    "nome": "Desenvolvimento Rural",
+    "descricao": "Área que fomenta a agricultura familiar, a produção rural sustentável e a inclusão produtiva no campo."
+  },
+  {
+    "nome": "Saneamento Básico",
+    "descricao": "Área voltada à gestão da água, esgotamento sanitário, resíduos sólidos e drenagem urbana."
+  },
+  {
+    "nome": "Educação",
+    "descricao": "Área dedicada à gestão da educação básica, valorização dos profissionais e garantia do acesso à escola."
+  },
+  {
+    "nome": "Finanças",
+    "descricao": "Área de gestão fiscal, arrecadação de receitas, execução orçamentária e equilíbrio financeiro municipal."
+  },
+  {
+    "nome": "Jurídico",
+    "descricao": "Área que presta assessoria legal e acompanha aspectos jurídicos da gestão municipal."
+  },
+  {
+    "nome": "Meio Ambiente",
+    "descricao": "Área responsável pela preservação ambiental, licenciamento, fiscalização e políticas de sustentabilidade."
+  },
+  {
+    "nome": "Mulheres",
+    "descricao": "Área voltada à promoção da igualdade de gênero, enfrentamento à violência e valorização das mulheres."
+  },
+  {
+    "nome": "Obras, Transferências e Parcerias",
+    "descricao": "Área de execução de obras públicas e gestão de convênios, transferências voluntárias e parcerias institucionais."
+  },
+  {
+    "nome": "Orçamento Público",
+    "descricao": "Área dedicada ao planejamento, elaboração, execução e controle do orçamento municipal."
+  },
+  {
+    "nome": "Planejamento Territorial e Habitação",
+    "descricao": "Área que trata da habitação de interesse social, regularização fundiária e ordenamento do território."
+  },
+  {
+    "nome": "Previdência",
+    "descricao": "Área que administra regimes próprios de previdência social e políticas voltadas à seguridade dos servidores municipais."
+  },
+  {
+    "nome": "Saúde",
+    "descricao": "Área de atenção à saúde pública, vigilância epidemiológica e gestão do Sistema Único de Saúde no município."
+  },
+  {
+    "nome": "Transporte e Mobilidade",
+    "descricao": "Área que organiza o transporte público, trânsito e políticas de mobilidade urbana sustentável."
+  },
+  {
+    "nome": "Turismo",
+    "descricao": "Área responsável pela promoção do turismo local, desenvolvimento de atrativos e fomento à economia turística."
+  }
+]

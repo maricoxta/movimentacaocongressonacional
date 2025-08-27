@@ -1,0 +1,29 @@
+[
+    {
+      "nome": "Audiência Pública sobre Saneamento",
+      "data_inicio": "2025-08-01",
+      "data_fim": "2025-08-01",
+      "comissao": "Comissão de Meio Ambiente",
+      "tema": "Resíduos Sólidos",
+      "local_evento": "Auditório da Câmara",
+      "tipo_evento": "Audiência Pública",
+      "situacao": "Em Andamento",
+      "finalidade": "Debater políticas de saneamento",
+      "link_evento": "https://www.camara.leg.br/evento/123",
+      "area_tecnica": "Saneamento Básico"
+    },
+    {
+      "nome": "Reunião sobre Planejamento Urbano",
+      "data_inicio": "2025-08-05",
+      "data_fim": "2025-08-05",
+      "comissao": "Comissão de Urbanismo",
+      "tema": "Planejamento Urbano",
+      "local_evento": "Sala 101",
+      "tipo_evento": "Reunião",
+      "situacao": "Encerrada",
+      "finalidade": "Ajuste de legislação municipal",
+      "link_evento": "",
+      "area_tecnica": "Planejamento Urbano"
+    }
+  ]
+  
